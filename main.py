@@ -71,9 +71,7 @@ def announcements():
 def _render_announcement(announcement):
     return f'''
 <div style="font-size: large;">
-    <div style="white-space: pre-wrap; max-width: 600px;">
-        {html.escape(announcement.content)}
-    </div>
+    <div style="white-space: pre-wrap; max-width: 600px;">{html.escape(announcement.content)}</div>
 </div>
 '''
 
