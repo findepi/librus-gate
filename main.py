@@ -1,11 +1,11 @@
+import hashlib
+import html
 import logging
 from functools import wraps
 
 from flask import Flask, request, Response
-from werkzeug.contrib.atom import AtomFeed
 from librus import LibrusSession
-
-import hashlib
+from werkzeug.contrib.atom import AtomFeed
 
 
 def check_auth(username, password):
@@ -58,9 +58,9 @@ def announcements():
     feed = AtomFeed("Announcements", feed_url=request.url, url=request.url_root)
     for announcement in session.list_announcements():
         feed.add(title=announcement.title,
-                 content=render_announcement(announcement),
-                 id=announcement_id(announcement),
-                 content_type='text',
+                 content=_render_announcement(announcement),
+                 id=_announcement_id(announcement),
+                 content_type='html',
                  author=announcement.author,
                  url='https://synergia.librus.pl/ogloszenia',
                  updated=announcement.date,
@@ -68,23 +68,26 @@ def announcements():
     return feed.get_response()
 
 
-def render_announcement(announcement):
-    rendered = '''Text:
--------------------------------------------
-{content}
--------------------------------------------
-'''.format(content=announcement.content)
-    for attr in ('title', 'author', 'date'):
-        rendered += '\n{k}: {v}'.format(k=attr, v=getattr(announcement, attr))
-    return rendered
+def _render_announcement(announcement):
+    return f'''
+<div style="font-size: large;">
+    <div style="white-space: pre-wrap; max-width: 600px;">
+        {html.escape(announcement.content)}
+    </div>
+</div>
+'''
 
 
-def announcement_id(announcement):
+def _announcement_id(announcement):
     hash = hashlib.sha256()
-    for attr in sorted(attr for attr in dir(announcement) if attr[0] != '_'):
+    for attr in sorted(_object_attributes(announcement)):
         hash.update(attr.encode('utf-8'))
         hash.update(str(getattr(announcement, attr)).encode('utf-8'))
     return hash.hexdigest()
+
+
+def _object_attributes(obj):
+    return (attr for attr in dir(obj) if attr[0] != '_')
 
 
 @app.errorhandler(500)
